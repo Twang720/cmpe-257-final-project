@@ -1,0 +1,26 @@
+XGBoost Tuned Results
+========================================
+Rows used: 3229
+Feature count after encoding: 36
+Best params: {'subsample': 0.6, 'reg_lambda': 10, 'reg_alpha': 0.1, 'n_estimators': 400, 'min_child_weight': 1, 'max_depth': 4, 'learning_rate': 0.03, 'gamma': 0, 'colsample_bytree': 0.8}
+Best threshold: 0.53
+
+Accuracy : 0.7632
+Precision: 0.7388
+Recall   : 0.7412
+F1-score : 0.7399
+ROC-AUC  : 0.8395
+
+Confusion Matrix:
+[[150  74]
+ [ 79 343]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.66      0.67      0.66       224
+           1       0.82      0.81      0.82       422
+
+    accuracy                           0.76       646
+   macro avg       0.74      0.74      0.74       646
+weighted avg       0.76      0.76      0.76       646
