@@ -1,0 +1,26 @@
+SVM Tuned Results
+========================================
+Rows used: 3229
+Feature count after encoding: 36
+Best params: {'kernel': 'linear', 'gamma': 0.01, 'degree': 2, 'C': 1}
+Best threshold: 0.50
+
+Accuracy : 0.7570
+Precision: 0.7331
+Recall   : 0.7407
+F1-score : 0.7363
+ROC-AUC  : 0.8221
+
+Confusion Matrix:
+[[154  70]
+ [ 87 335]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.64      0.69      0.66       224
+           1       0.83      0.79      0.81       422
+
+    accuracy                           0.76       646
+   macro avg       0.73      0.74      0.74       646
+weighted avg       0.76      0.76      0.76       646
