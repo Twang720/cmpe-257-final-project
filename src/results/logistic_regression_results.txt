@@ -1,0 +1,24 @@
+Logistic Regression Optimized Results
+========================================
+Rows used: 3229
+Feature count: 16
+
+Accuracy : 0.7322
+Precision: 0.8567
+Recall   : 0.7085
+F1-score : 0.7756
+ROC-AUC  : 0.8136
+
+Confusion Matrix:
+[[174  50]
+ [123 299]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.59      0.78      0.67       224
+           1       0.86      0.71      0.78       422
+
+    accuracy                           0.73       646
+   macro avg       0.72      0.74      0.72       646
+weighted avg       0.76      0.73      0.74       646
