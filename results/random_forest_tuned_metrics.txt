@@ -1,0 +1,26 @@
+Random Forest Tuned Results
+========================================
+Rows used: 3229
+Feature count after encoding: 36
+Best params: {'n_estimators': 600, 'min_samples_split': 10, 'min_samples_leaf': 4, 'max_features': 0.5, 'max_depth': None, 'bootstrap': True}
+Best threshold: 0.50
+
+Accuracy : 0.7755
+Precision: 0.7534
+Recall   : 0.7423
+F1-score : 0.7470
+ROC-AUC  : 0.8347
+
+Confusion Matrix:
+[[142  82]
+ [ 63 359]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.69      0.63      0.66       224
+           1       0.81      0.85      0.83       422
+
+    accuracy                           0.78       646
+   macro avg       0.75      0.74      0.75       646
+weighted avg       0.77      0.78      0.77       646
