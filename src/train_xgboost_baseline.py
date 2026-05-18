@@ -21,17 +21,13 @@ os.makedirs("models", exist_ok=True)
 os.makedirs("results", exist_ok=True)
 
 df = pd.read_csv(DATA_PATH)
-
 df = df[(df["budget"] > 0) & (df["revenue"] > 0)].copy()
-
 df["target"] = (df["revenue"] >= 1.5 * df["budget"]).astype(int)
-
-
 df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
 df["release_year"] = df["release_date"].dt.year
 df["release_month"] = df["release_date"].dt.month
 
-# First baseline feature set
+
 feature_cols = [
     "budget",
     "popularity",
@@ -46,7 +42,7 @@ feature_cols = [
 
 df = df[feature_cols + ["target"]].dropna().copy()
 
-# One-hot encode the simple categoricals
+
 X = pd.get_dummies(
     df[feature_cols],
     columns=["original_language", "status"],
@@ -54,12 +50,10 @@ X = pd.get_dummies(
 )
 y = df["target"]
 
-#  Stratified split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# Baseline XGBoost
 model = XGBClassifier(
     objective="binary:logistic",
     eval_metric="logloss",
@@ -113,7 +107,7 @@ with open(RESULTS_PATH, "w", encoding="utf-8") as f:
 
 joblib.dump(model, MODEL_PATH)
 
-# Create graphs
+# Create graphs for ROC, feature importance and confusion matrix
 import matplotlib.pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay
 from xgboost import plot_importance
@@ -146,9 +140,10 @@ plt.tight_layout()
 plt.savefig("figures/feature_importance_xgb.png", dpi=300)
 plt.close()
 
+
+
 print(f"\nSaved model to: {MODEL_PATH}")
 print(f"Saved metrics to: {RESULTS_PATH}")
 print("Saved graphs to: figures/")
-
 print(f"\nSaved model to: {MODEL_PATH}")
 print(f"Saved metrics to: {RESULTS_PATH}")
