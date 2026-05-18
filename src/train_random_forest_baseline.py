@@ -17,78 +17,48 @@ DATA_PATH = "src/data/processed/cleaned_tmdb_5000_movies.csv"
 MODEL_PATH = "models/random_forest_baseline.joblib"
 RESULTS_PATH = "results/random_forest_baseline_metrics.txt"
 
-os.makedirs("models", exist_ok=True)
-os.makedirs("results", exist_ok=True)
+os.makedirs("models", exist_ok = True)
+os.makedirs("results", exist_ok = True)
 
-# 1) Load data
+# load + filter data
 df = pd.read_csv(DATA_PATH)
-
-# 2) Keep only rows where target can be built reliably
 df = df[(df["budget"] > 0) & (df["revenue"] > 0)].copy()
-
-# 3) Build target
-df["target"] = (df["revenue"] >= 1.5 * df["budget"]).astype(int)
-
-# 4) Create simple date features
-df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
+df["target"] = (df["revenue"] >= 1.5 * df["budget"]).astype(int) # if revenue >= 1.5x budget --> profitable
+df["release_date"] = pd.to_datetime(df["release_date"], errors = "coerce") # turns unparseable dates into NaN
 df["release_year"] = df["release_date"].dt.year
 df["release_month"] = df["release_date"].dt.month
 
-# 5) First baseline feature set
-feature_cols = [
-    "budget",
-    "popularity",
-    "runtime",
-    "vote_average",
-    "vote_count",
-    "release_year",
-    "release_month",
-    "original_language",
-    "status",
-]
+# feature set
+feature_set = ["budget", "popularity", "runtime", "vote_average", "vote_count", "release_year", "release_month",
+                "original_language", "status",]
+df = df[feature_set + ["target"]].dropna().copy()
 
-df = df[feature_cols + ["target"]].dropna().copy()
-
-# 6) One-hot encode the simple categoricals
-X = pd.get_dummies(
-    df[feature_cols],
-    columns=["original_language", "status"],
-    drop_first=False
-)
+# One-hot encoding
+X = pd.get_dummies(df[feature_set], columns=["original_language", "status"], drop_first = False)
 y = df["target"]
 
-# 7) Stratified split
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+# stratified split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.2, random_state = 42, stratify = y)
+
+# baseline random forest
+model = RandomForestClassifier(n_estimators = 200, max_depth= 5, min_samples_split= 2, min_samples_leaf= 1,
+    max_features = "sqrt", bootstrap = True, random_state = 42, n_jobs = -1,
 )
 
-# 8) Baseline Random Forest
-model = RandomForestClassifier(
-    n_estimators=200,
-    max_depth=5,
-    min_samples_split=2,
-    min_samples_leaf=1,
-    max_features="sqrt",
-    bootstrap=True,
-    random_state=42,
-    n_jobs=-1,
-)
 
-# 9) Train
 model.fit(X_train, y_train)
 
-# 10) Predict
 y_pred = model.predict(X_test)
 y_prob = model.predict_proba(X_test)[:, 1]
 
-# 11) Metrics
+#Metrics
 acc = accuracy_score(y_test, y_pred)
-prec = precision_score(y_test, y_pred, zero_division=0)
-rec = recall_score(y_test, y_pred, zero_division=0)
-f1 = f1_score(y_test, y_pred, zero_division=0)
+prec = precision_score(y_test, y_pred, zero_division = 0)
+rec = recall_score(y_test, y_pred, zero_division = 0)
+f1 = f1_score(y_test, y_pred, zero_division = 0)
 auc = roc_auc_score(y_test, y_prob)
 cm = confusion_matrix(y_test, y_pred)
-report = classification_report(y_test, y_pred, zero_division=0)
+report = classification_report(y_test, y_pred, zero_division = 0)
 
 output = []
 output.append("Random Forest Baseline Results")

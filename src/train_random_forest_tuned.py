@@ -18,60 +18,32 @@ DATA_PATH = "src/data/processed/cleaned_tmdb_5000_movies.csv"
 MODEL_PATH = "models/random_forest_tuned.joblib"
 RESULTS_PATH = "results/random_forest_tuned_metrics.txt"
 
-os.makedirs("models", exist_ok=True)
-os.makedirs("results", exist_ok=True)
+os.makedirs("models", exist_ok = True)
+os.makedirs("results", exist_ok = True)
 
-# 1) Load data
+# load + filter data
 df = pd.read_csv(DATA_PATH)
-
-# 2) Keep only rows where target can be built reliably
 df = df[(df["budget"] > 0) & (df["revenue"] > 0)].copy()
-
-# 3) Build target
-df["target"] = (df["revenue"] >= 1.5 * df["budget"]).astype(int)
-
-# 4) Create simple date features
-df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
+df["target"] = (df["revenue"] >= 1.5 * df["budget"]).astype(int) # if revenue >= 1.5x budget --> profitable
+df["release_date"] = pd.to_datetime(df["release_date"], errors = "coerce") # turns unparseable dates into NaN
 df["release_year"] = df["release_date"].dt.year
 df["release_month"] = df["release_date"].dt.month
 
-# 5) Same feature set as baseline
-feature_cols = [
-    "budget",
-    "popularity",
-    "runtime",
-    "vote_average",
-    "vote_count",
-    "release_year",
-    "release_month",
-    "original_language",
-    "status",
-]
+# feature set (same as baseline)
+feature_set = ["budget", "popularity", "runtime", "vote_average", "vote_count", "release_year", "release_month",
+                "original_language", "status",]
+df = df[feature_set + ["target"]].dropna().copy()
 
-df = df[feature_cols + ["target"]].dropna().copy()
-
-# 6) One-hot encode
-X = pd.get_dummies(
-    df[feature_cols],
-    columns=["original_language", "status"],
-    drop_first=False
-)
+# One-hot encoding
+X = pd.get_dummies(df[feature_set], columns=["original_language", "status"], drop_first = False)
 y = df["target"]
 
-# 7) Train / validation / test split
-X_train_full, X_test, y_train_full, y_test = train_test_split(
-    X, y, test_size=0.20, random_state=42, stratify=y
-)
+# train / validation / test split
+X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size =0.20, random_state= 42, stratify =y)
+X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size = 0.20, random_state = 42, stratify = y_train_full)
 
-X_train, X_val, y_train, y_val = train_test_split(
-    X_train_full, y_train_full, test_size=0.20, random_state=42, stratify=y_train_full
-)
-
-# 8) Randomized search
-base_model = RandomForestClassifier(
-    random_state=42,
-    n_jobs=4,
-)
+# randomized search for tuning
+base_model = RandomForestClassifier(random_state = 42, n_jobs = 4,)
 
 param_dist = {
     "n_estimators": [200, 400, 600, 800],
@@ -82,21 +54,14 @@ param_dist = {
     "bootstrap": [True, False],
 }
 
-search = RandomizedSearchCV(
-    estimator=base_model,
-    param_distributions=param_dist,
-    n_iter=20,
-    scoring="f1_macro",
-    cv=5,
-    random_state=42,
-    n_jobs=1,
-    verbose=1
+search = RandomizedSearchCV(estimator = base_model, param_distributions = param_dist, n_iter = 20, scoring ="f1_macro",
+    cv = 5, random_state = 42, n_jobs= 1, verbose = 1
 )
 
 search.fit(X_train, y_train)
 best_model = search.best_estimator_
 
-# 9) Threshold tuning on validation set
+# threshold tuning
 val_prob = best_model.predict_proba(X_val)[:, 1]
 
 best_threshold = 0.50
@@ -104,22 +69,23 @@ best_score = -1
 
 for t in np.arange(0.10, 0.91, 0.01):
     val_pred = (val_prob >= t).astype(int)
-    score = f1_score(y_val, val_pred, average="macro", zero_division=0)
+    score = f1_score(y_val, val_pred, average = "macro", zero_division = 0)
     if score > best_score:
         best_score = score
         best_threshold = float(t)
 
-# 10) Final test evaluation
+#eval
 test_prob = best_model.predict_proba(X_test)[:, 1]
 test_pred = (test_prob >= best_threshold).astype(int)
 
+#Metrics
 acc = accuracy_score(y_test, test_pred)
-prec = precision_score(y_test, test_pred, average="macro", zero_division=0)
-rec = recall_score(y_test, test_pred, average="macro", zero_division=0)
-f1 = f1_score(y_test, test_pred, average="macro", zero_division=0)
+prec = precision_score(y_test, test_pred, average = "macro", zero_division = 0)
+rec = recall_score(y_test, test_pred, average = "macro", zero_division = 0)
+f1 = f1_score(y_test, test_pred, average = "macro", zero_division = 0)
 auc = roc_auc_score(y_test, test_prob)
 cm = confusion_matrix(y_test, test_pred)
-report = classification_report(y_test, test_pred, zero_division=0)
+report = classification_report(y_test, test_pred, zero_division = 0)
 
 output = []
 output.append("Random Forest Tuned Results")
