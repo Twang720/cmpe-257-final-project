@@ -20,21 +20,18 @@ RESULTS_PATH = "results/xgboost_baseline_metrics.txt"
 os.makedirs("models", exist_ok=True)
 os.makedirs("results", exist_ok=True)
 
-# 1) Load data
 df = pd.read_csv(DATA_PATH)
 
-# 2) Keep only rows where target can be built reliably
 df = df[(df["budget"] > 0) & (df["revenue"] > 0)].copy()
 
-# 3) Build target
 df["target"] = (df["revenue"] >= 1.5 * df["budget"]).astype(int)
 
-# 4) Create simple date features
+
 df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
 df["release_year"] = df["release_date"].dt.year
 df["release_month"] = df["release_date"].dt.month
 
-# 5) First baseline feature set
+# First baseline feature set
 feature_cols = [
     "budget",
     "popularity",
@@ -49,7 +46,7 @@ feature_cols = [
 
 df = df[feature_cols + ["target"]].dropna().copy()
 
-# 6) One-hot encode the simple categoricals
+# One-hot encode the simple categoricals
 X = pd.get_dummies(
     df[feature_cols],
     columns=["original_language", "status"],
@@ -57,12 +54,12 @@ X = pd.get_dummies(
 )
 y = df["target"]
 
-# 7) Stratified split
+#  Stratified split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# 8) Baseline XGBoost
+# Baseline XGBoost
 model = XGBClassifier(
     objective="binary:logistic",
     eval_metric="logloss",
@@ -74,14 +71,14 @@ model = XGBClassifier(
     random_state=42,
 )
 
-# 9) Train
+# Train
 model.fit(X_train, y_train)
 
-# 10) Predict
+# Predict
 y_pred = model.predict(X_test)
 y_prob = model.predict_proba(X_test)[:, 1]
 
-# 11) Metrics
+# Metrics
 acc = accuracy_score(y_test, y_pred)
 prec = precision_score(y_test, y_pred, zero_division=0)
 rec = recall_score(y_test, y_pred, zero_division=0)
@@ -115,6 +112,43 @@ with open(RESULTS_PATH, "w", encoding="utf-8") as f:
     f.write(result_text)
 
 joblib.dump(model, MODEL_PATH)
+
+# Create graphs
+import matplotlib.pyplot as plt
+from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay
+from xgboost import plot_importance
+
+os.makedirs("figures", exist_ok=True)
+
+# Confusion Matrix
+ConfusionMatrixDisplay.from_predictions(
+    y_test,
+    y_pred,
+    display_labels=["Flop", "Hit"],
+    cmap="Blues"
+)
+plt.title("XGBoost Baseline Confusion Matrix")
+plt.tight_layout()
+plt.savefig("figures/confusion_matrix_xgb.png", dpi=300)
+plt.close()
+
+# ROC Curve
+RocCurveDisplay.from_predictions(y_test, y_prob)
+plt.title("XGBoost Baseline ROC Curve")
+plt.tight_layout()
+plt.savefig("figures/roc_curve_xgb.png", dpi=300)
+plt.close()
+
+# Feature Importance
+plot_importance(model, max_num_features=10)
+plt.title("Top 10 XGBoost Feature Importances")
+plt.tight_layout()
+plt.savefig("figures/feature_importance_xgb.png", dpi=300)
+plt.close()
+
+print(f"\nSaved model to: {MODEL_PATH}")
+print(f"Saved metrics to: {RESULTS_PATH}")
+print("Saved graphs to: figures/")
 
 print(f"\nSaved model to: {MODEL_PATH}")
 print(f"Saved metrics to: {RESULTS_PATH}")

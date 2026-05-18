@@ -21,21 +21,17 @@ RESULTS_PATH = "results/xgboost_tuned_metrics.txt"
 os.makedirs("models", exist_ok=True)
 os.makedirs("results", exist_ok=True)
 
-# 1) Load data
-df = pd.read_csv(DATA_PATH)
 
-# 2) Keep only rows where target can be built reliably
+df = pd.read_csv(DATA_PATH)
 df = df[(df["budget"] > 0) & (df["revenue"] > 0)].copy()
 
-# 3) Build target
-df["target"] = (df["revenue"] >= 1.5 * df["budget"]).astype(int)
 
-# 4) Create simple date features
+df["target"] = (df["revenue"] >= 1.5 * df["budget"]).astype(int)
 df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
 df["release_year"] = df["release_date"].dt.year
 df["release_month"] = df["release_date"].dt.month
 
-# 5) Same feature set as baseline
+# Same feature set as baseline
 feature_cols = [
     "budget",
     "popularity",
@@ -58,7 +54,7 @@ X = pd.get_dummies(
 )
 y = df["target"]
 
-# 7) Train / validation / test split
+# Train / validation / test split
 X_train_full, X_test, y_train_full, y_test = train_test_split(
     X, y, test_size=0.20, random_state=42, stratify=y
 )
@@ -67,7 +63,7 @@ X_train, X_val, y_train, y_val = train_test_split(
     X_train_full, y_train_full, test_size=0.20, random_state=42, stratify=y_train_full
 )
 
-# 8) Randomized search
+# Randomized search
 base_model = XGBClassifier(
     objective="binary:logistic",
     eval_metric="logloss",
