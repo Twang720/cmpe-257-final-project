@@ -24,14 +24,12 @@ os.makedirs("results", exist_ok=True)
 
 df = pd.read_csv(DATA_PATH)
 df = df[(df["budget"] > 0) & (df["revenue"] > 0)].copy()
-
-
 df["target"] = (df["revenue"] >= 1.5 * df["budget"]).astype(int)
 df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
 df["release_year"] = df["release_date"].dt.year
 df["release_month"] = df["release_date"].dt.month
 
-# Same feature set as baseline
+
 feature_cols = [
     "budget",
     "popularity",
@@ -46,7 +44,6 @@ feature_cols = [
 
 df = df[feature_cols + ["target"]].dropna().copy()
 
-# 6) One-hot encode
 X = pd.get_dummies(
     df[feature_cols],
     columns=["original_language", "status"],
@@ -97,7 +94,6 @@ search = RandomizedSearchCV(
 search.fit(X_train, y_train)
 best_model = search.best_estimator_
 
-# 9) Threshold tuning on validation set
 val_prob = best_model.predict_proba(X_val)[:, 1]
 
 best_threshold = 0.50
